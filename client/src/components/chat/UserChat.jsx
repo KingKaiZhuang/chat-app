@@ -4,7 +4,6 @@ import avarter from "../../assets/avarter.svg";
 
 const UserChat = ({ chat, user }) => {
   const { recipientUser } = useFetchRecipiientUser(chat, user);
-  console.log("RecipientUser", recipientUser);
   return (
     <Stack
       direction="horizontal"

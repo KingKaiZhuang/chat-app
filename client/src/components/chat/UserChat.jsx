@@ -1,9 +1,9 @@
 import { Stack } from "react-bootstrap";
-import { useFetchRecipiientUser } from "../../hooks/useFetchRecipient";
+import { useFetchRecipientUser } from "../../hooks/useFetchRecipient";
 import avarter from "../../assets/avarter.svg";
 
 const UserChat = ({ chat, user }) => {
-  const { recipientUser } = useFetchRecipiientUser(chat, user);
+  const { recipientUser } = useFetchRecipientUser(chat, user);
   return (
     <Stack
       direction="horizontal"

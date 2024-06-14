@@ -1,26 +1,26 @@
 import { useEffect, useState } from "react";
-import { getRequest } from "../utils/service";
-import { baseUrl } from "../utils/service";
+import { baseUrl, getRequest } from "../utils/service";
 
-export const useFetchRecipiientUser = (chat, user) => {
+export const useFetchRecipientUser = (chat, user) => {
   const [recipientUser, setRecipientUser] = useState(null);
   const [error, setError] = useState(null);
-
-  const recipientId = chat?.members.find((id) => id !== user._id);
+  const recipientId = chat?.members?.find((id) => id !== user?._id);
 
   useEffect(() => {
     const getUser = async () => {
-      if (!recipientId) return null;
+      if (!recipientId) return;
+
       const response = await getRequest(`${baseUrl}/users/find/${recipientId}`);
 
       if (response.error) {
-        return setError(error);
+        return setError(response.error);
       }
 
       setRecipientUser(response);
     };
-    getUser();
-  }, []);
 
-  return { recipientUser, error };
+    getUser();
+  }, [recipientId]);
+
+  return { recipientUser };
 };

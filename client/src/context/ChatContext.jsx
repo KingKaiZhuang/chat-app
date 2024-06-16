@@ -1,6 +1,7 @@
 import { useState, createContext, useEffect, useCallback } from "react";
 import { baseUrl, getRequest, postRequest } from "../utils/service";
 import { io } from "socket.io-client";
+import { isReadable } from "stream";
 
 export const ChatContext = createContext();
 
@@ -17,8 +18,9 @@ export const ChatContextProvider = ({ children, user }) => {
   const [newMessage, setnewMessage] = useState(null);
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  // const [notifications, setNotifications] = useState([]);
 
-  console.log("onlineUsers", onlineUsers);
+  // console.log("notifications", notifications);
 
   // initialize socket
   useEffect(() => {
@@ -57,7 +59,7 @@ export const ChatContextProvider = ({ children, user }) => {
     }
   }, [newMessage, socket, currentChat, user]);
 
-  // receive message
+  // receive message and notification
   useEffect(() => {
     if (socket === null) return;
 
@@ -67,8 +69,19 @@ export const ChatContextProvider = ({ children, user }) => {
       setMessages((prev) => [...prev, res]);
     });
 
+    // socket.on("getNotification", (res) => {
+    //   const isChatOpen = currentChat?.members.some((id) => id === res.senderId);
+
+    //   if (isChatOpen) {
+    //     setNotifications((prev) => [{ ...res, isRead: true }, ...prev]);
+    //   } else {
+    //     setNotifications((prev) => [res, ...prev]);
+    //   }
+    // });
+
     return () => {
       socket.off("getMessage");
+      // socket.off("getNotification");
     };
   }, [socket, currentChat]);
 

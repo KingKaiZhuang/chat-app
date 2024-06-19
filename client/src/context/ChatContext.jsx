@@ -1,7 +1,6 @@
 import { useState, createContext, useEffect, useCallback } from "react";
 import { baseUrl, getRequest, postRequest } from "../utils/service";
 import { io } from "socket.io-client";
-import { isReadable } from "stream";
 
 export const ChatContext = createContext();
 
@@ -18,9 +17,8 @@ export const ChatContextProvider = ({ children, user }) => {
   const [newMessage, setnewMessage] = useState(null);
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
-  // const [notifications, setNotifications] = useState([]);
-
-  // console.log("notifications", notifications);
+  const [notifications, setNotifications] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
 
   // initialize socket
   useEffect(() => {
@@ -69,19 +67,19 @@ export const ChatContextProvider = ({ children, user }) => {
       setMessages((prev) => [...prev, res]);
     });
 
-    // socket.on("getNotification", (res) => {
-    //   const isChatOpen = currentChat?.members.some((id) => id === res.senderId);
+    socket.on("getNotification", (res) => {
+      const isChatOpen = currentChat?.members.some((id) => id === res.senderId);
 
-    //   if (isChatOpen) {
-    //     setNotifications((prev) => [{ ...res, isRead: true }, ...prev]);
-    //   } else {
-    //     setNotifications((prev) => [res, ...prev]);
-    //   }
-    // });
+      if (isChatOpen) {
+        setNotifications((prev) => [{ ...res, isRead: true }, ...prev]);
+      } else {
+        setNotifications((prev) => [res, ...prev]);
+      }
+    });
 
     return () => {
       socket.off("getMessage");
-      // socket.off("getNotification");
+      socket.off("getNotification");
     };
   }, [socket, currentChat]);
 
@@ -108,6 +106,7 @@ export const ChatContextProvider = ({ children, user }) => {
       });
 
       setPotentialChats(pChats);
+      setAllUsers(response);
     };
 
     getUsers();
@@ -178,7 +177,6 @@ export const ChatContextProvider = ({ children, user }) => {
   );
 
   const updateCurrentChat = useCallback((chat) => {
-    // console.log("Clickchat:", chat);
     setCurrentChat(chat);
   }, []);
 
@@ -195,6 +193,63 @@ export const ChatContextProvider = ({ children, user }) => {
     setUserChats((prev) => [...prev, response]);
   }, []);
 
+  const markAllNotificationsAsRead = useCallback((notifications) => {
+    const mNofications = notifications.map((n) => {
+      return {
+        ...n,
+        isRead: true,
+      };
+    });
+
+    setNotifications(mNofications);
+  }, []);
+
+  const markNotificationsAsRead = useCallback(
+    (n, userChats, user, notifications) => {
+      // find chat to open
+      const desiredChat = userChats.find((chat) => {
+        const chatMember = [user._id, n.senderId];
+        const isDesiredChat = chat?.members.every((member) => {
+          return chatMember.includes(member);
+        });
+        return isDesiredChat;
+      });
+
+      // mark notification as read
+      const mNotifications = notifications.map((el) => {
+        if (n.senderId === el.senderId) {
+          return { ...el, isRead: true };
+        } else {
+          return el;
+        }
+      });
+
+      updateCurrentChat(desiredChat);
+      setNotifications(mNotifications);
+    },
+    [userChats, user, notifications, updateCurrentChat, setNotifications]
+  );
+
+  const markThisUserNotificationsAsRead = useCallback(
+    (thisUserNotifications, notifications) => {
+      const mNotifications = notifications.map((el) => {
+        let notification;
+
+        thisUserNotifications.forEach((n) => {
+          if (n.senderId === el.senderId) {
+            notification = { ...n, isRead: true };
+          } else {
+            notification = el;
+          }
+        });
+        return notification;
+      });
+      setNotifications(mNotifications);
+    },
+
+    []
+  );
+
   return (
     <ChatContext.Provider
       value={{
@@ -210,6 +265,11 @@ export const ChatContextProvider = ({ children, user }) => {
         messagesError,
         sendTextMessage,
         onlineUsers,
+        notifications,
+        allUsers,
+        markAllNotificationsAsRead,
+        markNotificationsAsRead,
+        markThisUserNotificationsAsRead,
       }}
     >
       {children}
